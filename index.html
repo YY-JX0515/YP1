@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动漫数据可视化系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: rgba(245, 245, 245, 0.8);
+            color: #333;
+            padding-top: 70px; /* 为固定导航条留出空间 */
+            padding-left: 150px; /* 为左侧导航条留出空间 */
+            min-height: 100vh;
+        }
+
+        /* 动态背景样式 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
+            opacity: 0.15; /* 降低背景视频透明度 */
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1, h2 {
+            color: #2c3e50;
+        }
+        
+        /* 固定顶部导航条样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #ffb6c1;
+            padding: 15px 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            margin-left: 170px; /* 为左侧导航条留出空间 */
+        }
+        
+        .nav-item {
+            color: #333;
+            text-decoration: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            width: 120px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-item:hover {
+            background-color: #3498db;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .nav-item.active {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        /* 搜索栏样式 */
+        .search-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input {
+            width: 230px;
+            height: 40px;
+            padding: 0 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px 0 0 4px;
+            box-sizing: border-box;
+        }
+
+        .search-type {
+            height: 40px;
+            border: 1px solid #ddd;
+            border-left: none;
+            box-sizing: border-box;
+        }
+
+        .search-button {
+            width: 120px;
+            height: 40px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+
+        .user-center-link {
+            margin-left: 10px;
+            width: 120px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        /* 左侧固定竖形导航条样式 */
+        .vertical-navbar {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 150px;
+            height: 450px;
+            background-color: rgba(255, 182, 193, 0.9);
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .vertical-navbar:hover {
+            transform: translateY(-50%) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .vertical-nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .vertical-nav-item {
+            width: 120px;
+            margin: 5px 0;
+        }
+        
+        .vertical-nav-link {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            height: 40px;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .vertical-nav-link:hover {
+            background-color: #3498db;
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .vertical-nav-link.active {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .back-to-top {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            width: 120px;
+            height: 40px;
+            margin: 15px auto;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .back-to-top:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .vertical-navbar {
+                left: 10px;
+                width: 120px;
+                height: 400px;
+            }
+            
+            .vertical-nav-item {
+                width: 100px;
+            }
+            
+            .vertical-nav-link {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            .back-to-top {
+                width: 100px;
+                font-size: 14px;
+            }
+        }
+
+        /* 内容区域 */
+        .section {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            scroll-margin-top: 70px;
+            backdrop-filter: blur(3px);
+        }
+
+        /* 动漫卡片样式 */
+        .anime-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: flex-start;
+        }
+
+        .anime-card {
+            width: calc(20% - 16px);
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .anime-cover-container {
+            height: 240px;
+            overflow: hidden;
+            position: relative;
+            background-color: #f5f5f5; /* 添加默认背景色 */
+        }
+
+        .anime-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s, opacity 0.3s ease; /* 添加透明度过渡 */
+        }
+
+        .anime-card:hover .anime-cover {
+            transform: scale(1.05);
+        }
+        
+        .loading-spinner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: none; /* 默认隐藏加载动画 */
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 添加图片淡入效果 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* 添加图片预加载占位样式 */
+        .image-placeholder {
+            width: 100%;
+            height: 100%;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #888;
+            font-size: 14px;
+        }
+
+        .anime-info {
+            padding: 15px;
+            flex-grow: 1;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .anime-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            position: relative;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;  /* 最多显示3行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            min-height: 1.2em;  /* 1行文字的最小高度 */
+            max-height: 3.6em;  /* 3行文字的最大高度 */
+            word-wrap: break-word;  /* 允许在单词内换行 */
+            word-break: break-word;  /* 允许在任意字符间换行 */
+        }
+
+        /* 根据内容长度动态调整字体大小 */
+        .anime-title[data-length="long"] {
+            font-size: 14px;
+        }
+
+        .anime-title[data-length="very-long"] {
+            font-size: 12px;
+        }
+
+        /* 添加悬停提示框样式 */
+        .anime-title:hover::after {
+            content: attr(data-full-title);  /* 使用data属性存储完整标题 */
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            white-space: normal;
+            max-width: 200px;
+            z-index: 1000;
+            margin-top: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .anime-detail {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .anime-tags {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .anime-actions {
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            background-color: #f0f0f0;
+        }
+        
+        .anime-actions button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        .detail-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .detail-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .favorite-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .favorite-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .favorite-btn.favorited {
+            background-color: #c0392b;
+        }
+
+        /* 轮播区域样式 */
+        .carousel-section {
+            position: relative;
+        }
+        
+        .refresh-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 120px;
+            height: 40px;
+        }
+        
+        /* 表单样式 */
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 120px;
+            height: 40px;
+            box-sizing: border-box;
+        }
+        
+        .submit-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 120px;
+            height: 40px;
+        }
+
+        /* 平滑滚动 */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* 导航链接动画效果 */
+        .nav-item, .vertical-nav-link {
+            position: relative;
+            overflow: hidden;
+            }
+        
+        .nav-item:after, .vertical-nav-link:after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 0;
+            height: 0;
+            background-color: rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        
+        .nav-item:hover:after, .vertical-nav-link:hover:after {
+            width: 300px;
+            height: 300px;
+            }
+        
+        .nav-item.active:after, .vertical-nav-link.active:after {
+            background-color: rgba(255, 255, 255, 0.2);
+            width: 100%;
+            height: 100%;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="nav-links">
+            <a href="#tv-section" class="nav-item">TV版</a>
+            <a href="#movie-section" class="nav-item">剧场版</a>
+            <a href="#ranking-section" class="nav-item">排行榜</a>
+            <a href="#hot-section" class="nav-item">热门推荐</a>
+            <a href="#personal-section" class="nav-item">个性化推荐</a>
+        </div>
+        <div class="search-container">
+            <input type="text" placeholder="搜索动漫..." class="search-input" id="search-input">
+            <select id="search-type" class="search-type">
+                <option value="title">标题</option>
+                <option value="genre">标签</option>
+                <option value="studio">工作室</option>
+            </select>
+            <button class="search-button" onclick="searchAnime()">搜索</button>
+            <a href="user-center.html" class="user-center-link">个人中心</a>
+    </div>
+    </nav>
+
+    <!-- 左侧竖形导航栏 -->
+    <nav class="vertical-navbar">
+        <div class="vertical-nav-links">
+            <div class="vertical-nav-item">
+                <a href="#tv-section" class="vertical-nav-link">TV版</a>
+            </div>
+            <div class="vertical-nav-item">
+                <a href="#movie-section" class="vertical-nav-link">剧场版</a>
+            </div>
+            <div class="vertical-nav-item">
+                <a href="#ranking-section" class="vertical-nav-link">排行榜</a>
+            </div>
+            <div class="vertical-nav-item">
+                <a href="#hot-section" class="vertical-nav-link">热门推荐</a>
+            </div>
+            <div class="vertical-nav-item">
+                <a href="#personal-section" class="vertical-nav-link">个性化推荐</a>
+            </div>
+        </div>
+        <button class="back-to-top" onclick="scrollToTop()">回到顶部</button>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <div class="container">
+        <!-- TV版区域 -->
+        <section id="tv-section" class="section carousel-section">
+            <h2>TV版动漫</h2>
+            <button class="refresh-button" onclick="refreshTVAnime()">刷新</button>
+            <div id="tv-anime-container" class="anime-container">
+                <!-- TV版动漫列表将通过JS动态加载 -->
+            </div>
+        </section>
+
+        <!-- 剧场版区域 -->
+        <section id="movie-section" class="section carousel-section">
+            <h2>剧场版动漫</h2>
+            <button class="refresh-button" onclick="refreshMovieAnime()">换一换</button>
+            <div id="movie-anime-container" class="anime-container">
+                <!-- 剧场版动漫列表将通过JS动态加载 -->
+                </div>
+            </section>
+
+        <!-- 排行榜区域 -->
+        <section id="ranking-section" class="section">
+            <h2>动漫排行榜</h2>
+            <div class="form-row">
+                <label for="ranking-limit">显示数量:</label>
+                <input type="number" id="ranking-limit" class="form-control" value="10" min="5" max="50">
+                <label for="ranking-sort">排序方式:</label>
+                <select id="ranking-sort" class="form-control">
+                    <option value="score">评分</option>
+                    <option value="popularity">人气</option>
+                    <option value="rank">排名</option>
+                </select>
+                <button class="submit-button" onclick="loadRanking()">获取排行</button>
+            </div>
+            <div id="ranking-container" class="anime-container">
+                <!-- 排行榜内容将通过JS动态加载 -->
+            </div>
+        </section>
+
+        <!-- 热门推荐区域 -->
+        <section id="hot-section" class="section">
+            <h2>热门推荐</h2>
+            <div class="form-row">
+                <label for="hot-limit">显示数量:</label>
+                <input type="number" id="hot-limit" class="form-control" value="10" min="5" max="20">
+                <button class="submit-button" onclick="loadHotRecommend()">获取推荐</button>
+            </div>
+            <div id="hot-container" class="anime-container">
+                <!-- 热门推荐内容将通过JS动态加载 -->
+            </div>
+        </section>
+
+        <!-- 个性化推荐区域 -->
+        <section id="personal-section" class="section">
+            <h2>个性化推荐</h2>
+            <div class="form-row">
+                <button class="submit-button" onclick="loadPersonalRecommend()">获取推荐</button>
+            </div>
+            <div id="personal-container" class="anime-container">
+                <!-- 个性化推荐内容将通过JS动态加载 -->
+            </div>
+        </section>
+    </div>
+
+    <!-- 隐藏的表单用于收藏操作 -->
+    <form id="favorite-form" style="display: none;">
+        <input type="hidden" id="fav-user-id">
+        <input type="hidden" id="fav-anime-id">
+        <button type="button" id="add-favorite-btn"></button>
+        <button type="button" id="remove-favorite-btn"></button>
+    </form>
+
+    <div id="loading-templates" style="display: none;">
+        <!-- 加载中的动画图标 -->
+        <div id="loading-spinner-template">
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 默认封面图片的SVG模板 -->
+        <div id="default-cover-template">
+            <svg width="100%" height="100%" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="#f0f0f0"/>
+                <text x="50%" y="50%" font-family="Arial" font-size="20" fill="#999" text-anchor="middle">无封面</text>
+                <path d="M50,100 Q100,50 150,100 T250,100" stroke="#ccc" fill="none"/>
+            </svg>
+        </div>
+    </div>
+
+    <script src="index-script.js"></script>
+    <script>
+        // 全局变量，用于跟踪已使用的封面
+        let usedCovers = new Set();
+        let availableCovers = []; // 存储可用的封面索引
+        
+        // 记录搜索点击
+        function recordSearchClick(animeId, searchTerm) {
+            const userId = localStorage.getItem('user_id'); // 从localStorage获取用户ID
+            if (!userId) {
+                console.log('用户未登录，无法记录点击');
+                return;
+            }
+
+            fetch('/api/record_click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    anime_id: animeId,
+                    search_term: searchTerm
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('记录点击失败:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('记录点击请求失败:', error);
+            });
+        }
+
+        // 搜索动漫
+        function searchAnime() {
+            const keyword = document.getElementById('search-input').value.trim();
+            const searchType = document.getElementById('search-type').value;
+            const userId = localStorage.getItem('user_id');
+
+            if (!keyword) {
+                alert('请输入搜索关键词');
+                return;
+            }
+
+            fetch(`/api/anime/search?keyword=${encodeURIComponent(keyword)}&type=${searchType}&user_id=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 200) {
+                        const container = document.createElement('div');
+                        container.className = 'anime-container';
+                        
+                        data.results.forEach(anime => {
+                            const card = createAnimeCard(anime);
+                            // 添加点击事件监听器
+                            card.addEventListener('click', () => {
+                                recordSearchClick(anime.id, keyword);
+                            });
+                            container.appendChild(card);
+                        });
+
+                        // 清空并显示结果
+                        const searchResults = document.getElementById('search-results');
+                        if (searchResults) {
+                            searchResults.innerHTML = '';
+                            searchResults.appendChild(container);
+                        }
+                    } else {
+                        alert(data.error || '搜索失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('搜索请求失败:', error);
+                    alert('搜索失败，请稍后重试');
+                });
+        }
+
+        // 获取唯一的封面图片
+        function getUniqueCover() {
+            // 如果可用封面列表为空，重新初始化
+            if (availableCovers.length === 0) {
+                // 获取本地目录中的图片数量
+                const coverCount = 75; // 假设有83张封面图片
+                availableCovers = Array.from({ length: coverCount }, (_, i) => i + 1);
+            }
+            
+            // 随机选择一个封面索引
+            const randomIndex = Math.floor(Math.random() * availableCovers.length);
+            const selectedNumber = availableCovers.splice(randomIndex, 1)[0];
+            
+            // 添加时间戳避免缓存问题
+            const timestamp = new Date().getTime();
+            return `D:/PythonProject1/photos/${selectedNumber}.png?t=${timestamp}`;
+        }
+        
+        // 在渲染动漫卡片时使用getUniqueCover函数
+        function renderAnimeCard(anime) {
+            const coverUrl = getUniqueCover();
+            // ... 其他渲染代码 ...
+        }
+    </script>
+</body>
+</html> 

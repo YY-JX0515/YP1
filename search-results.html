@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索结果 - 动漫数据可视化系统</title>
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: rgba(245, 245, 245, 0.8);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 导航栏 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffb6c1;
+            padding: 15px 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .back-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 40px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            margin-left: 170px; /* 为左侧导航条留出空间 */
+        }
+        
+        .back-button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        }
+        
+        .search-info {
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        
+        /* 结果列表 */
+        .results-header {
+            margin-bottom: 20px;
+        }
+        
+        .results-count {
+            color: #3498db;
+            font-weight: bold;
+        }
+        
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        /* 动漫卡片样式 */
+        .anime-card {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #eee;
+        }
+        
+        .anime-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .anime-cover-container {
+            height: 300px;
+            overflow: hidden;
+            background-color: #f5f5f5;
+        }
+        
+        .anime-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .anime-card:hover .anime-cover {
+            transform: scale(1.05);
+        }
+        
+        .anime-info {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        
+        .anime-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .anime-detail {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        
+        .tag {
+            background-color: #e0f7fa;
+            color: #00838f;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .action-buttons {
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            background-color: #f5f5f5;
+        }
+        
+        .action-buttons button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 120px;
+            height: 40px;
+        }
+        
+        .action-buttons button:hover {
+            background-color: #2980b9;
+        }
+        
+        .action-buttons button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        /* 加载中和错误消息 */
+        .loading-message, .error-message {
+            text-align: center;
+            padding: 20px;
+            font-size: 16px;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .results-container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .navbar {
+                padding: 10px;
+            }
+            
+            .back-button {
+                margin-left: 130px;
+                width: 100px;
+                font-size: 14px;
+            }
+            
+            .search-info {
+                font-size: 14px;
+                margin-right: 10px;
+            }
+        }
+        
+        /* 推荐收藏区域样式 */
+        .recommendations-section {
+            margin-top: 40px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+        }
+        
+        .recommendations-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .recommendations-title {
+            font-size: 1.5em;
+            color: #2c3e50;
+        }
+        
+        .refresh-recommendations {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .refresh-recommendations:hover {
+            background-color: #2980b9;
+        }
+        
+        /* 加载动画 */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 添加点击动画样式 */
+        @keyframes clickEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+            100% { transform: scale(1); }
+        }
+        
+        .anime-card.clicked {
+            animation: clickEffect 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="navbar">
+            <a href="index.html" class="back-button">返回</a>
+            <div class="search-info" id="search-info">搜索结果</div>
+        </div>
+        
+        <div class="results-header">
+            <h1>搜索结果</h1>
+            <p>共找到 <span class="results-count" id="results-count">0</span> 条结果</p>
+        </div>
+        
+        <div id="results-container" class="results-container">
+            <div class="loading-message">正在加载结果...</div>
+        </div>
+        
+        <!-- 个性化推荐区域 -->
+        <div class="recommendations-section">
+            <div class="recommendations-header">
+                <div class="recommendations-title">根据您的收藏，您可能还喜欢：</div>
+                <button class="refresh-recommendations" onclick="loadPersonalRecommendations()">
+                    <span id="recommendation-loading" style="display: none;" class="loading-spinner"></span>
+                    刷新推荐
+                </button>
+            </div>
+            <div id="recommendations-container" class="results-container">
+                <div class="loading-message">加载个性化推荐中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隐藏的表单用于收藏操作 -->
+    <form id="favorite-form" style="display: none;">
+        <input type="hidden" id="fav-user-id">
+        <input type="hidden" id="fav-anime-id">
+        <button type="button" id="add-favorite-btn"></button>
+        <button type="button" id="remove-favorite-btn"></button>
+    </form>
+            
+    <script>
+        // 全局变量
+        const API_BASE_URL = 'http://localhost:5001/api';
+        let currentUserID = null;
+        let userFavorites = [];
+        let usedCovers = new Set();
+        let availableCovers = []; // 存储可用的封面索引
+        
+        // 获取唯一的封面图片
+        function getUniqueCover() {
+            // 如果可用封面列表为空，重新初始化
+            if (availableCovers.length === 0) {
+                // 获取本地目录中的图片数量
+                const coverCount = 75; // 假设有75张封面图片
+                availableCovers = Array.from({ length: coverCount }, (_, i) => i + 1);
+            }
+            
+            // 随机选择一个封面索引
+            const randomIndex = Math.floor(Math.random() * availableCovers.length);
+            const selectedNumber = availableCovers.splice(randomIndex, 1)[0];
+            
+            // 添加时间戳避免缓存问题
+            const timestamp = new Date().getTime();
+            return `/api/photos/${selectedNumber}.png?t=${timestamp}`;
+        }
+        
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            setupImageErrorHandling();
+            usedCovers.clear();
+        });
+        
+        // 检查登录状态
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('user_id');
+            
+            if (!userId) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUserID = userId;
+            fetchUserFavorites();
+            performSearch();
+        }
+        
+        // 获取用户收藏列表
+        function fetchUserFavorites() {
+            if (!currentUserID) return;
+            
+            fetch(`${API_BASE_URL}/user_favorites?user_id=${currentUserID}`)
+                .then(response => response.json())
+                .then(data => {
+                    userFavorites = data.favorites || [];
+                })
+                .catch(error => {
+                    console.error('获取收藏列表失败:', error);
+                });
+        }
+        
+        // 执行搜索
+        function performSearch() {
+            const keyword = sessionStorage.getItem('search_keyword');
+            const searchType = sessionStorage.getItem('search_type');
+            const userId = localStorage.getItem('user_id');
+            
+            if (!keyword) {
+                document.getElementById('results-container').innerHTML = 
+                    '<div class="error-message">搜索关键词为空，请返回首页重新搜索</div>';
+                return;
+            }
+            
+            document.getElementById('search-info').textContent = `搜索类型: ${getSearchTypeName(searchType)} | 关键词: ${keyword}`;
+            
+            // 执行API调用
+            fetch(`${API_BASE_URL}/anime/search?type=${searchType}&keyword=${encodeURIComponent(keyword)}&user_id=${userId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.count > 0) {
+                        document.getElementById('results-count').textContent = data.count;
+                        renderSearchResults(data.results);
+                    } else {
+                        document.getElementById('results-container').innerHTML = 
+                            '<div class="error-message">未找到匹配的动漫，请尝试其他关键词</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('搜索失败:', error);
+                    document.getElementById('results-container').innerHTML = 
+                        '<div class="error-message">搜索失败，请稍后再试</div>';
+                });
+        }
+        
+        // 获取搜索类型名称
+        function getSearchTypeName(searchType) {
+            switch (searchType) {
+                case 'title': return '标题';
+                case 'genre': return '标签';
+                case 'studio': return '工作室';
+                default: return '标题';
+            }
+        }
+        
+        // 设置图片错误处理
+        function setupImageErrorHandling() {
+            document.querySelectorAll('.anime-cover').forEach(img => {
+                if (!img.hasAttribute('data-error-handler-set')) {
+                    img.setAttribute('data-error-handler-set', 'true');
+                    img.onerror = function() {
+                        this.onerror = null;
+                        this.src = getUniqueCover();
+                    };
+                }
+            });
+        }
+        
+        // 渲染搜索结果
+        function renderSearchResults(results) {
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+            
+            results.forEach(anime => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                
+                const isFavorite = userFavorites.some(fav => fav.anime_id === anime.id);
+                
+                let genresHTML = '';
+                if (anime.genres && anime.genres.length > 0) {
+                    const genresList = typeof anime.genres === 'string' ? anime.genres.split(',') : anime.genres;
+                    genresHTML = '<div class="tag-container">' + 
+                        genresList.map(genre => `<span class="tag">${genre}</span>`).join('') + 
+                        '</div>';
+                }
+                
+                let studiosHTML = '';
+                if (anime.studios && anime.studios.length > 0) {
+                    const studiosList = typeof anime.studios === 'string' ? anime.studios.split(',') : anime.studios;
+                    studiosHTML = '<div class="tag-container">' + 
+                        studiosList.map(studio => `<span class="tag">${studio}</span>`).join('') + 
+                        '</div>';
+                }
+                
+                card.innerHTML = `
+                    <div class="anime-cover-container">
+                        <img src="${getUniqueCover()}" alt="${anime.title}" class="anime-cover">
+                    </div>
+                    <div class="anime-info">
+                        <div class="anime-title" data-full-title="${anime.title}">${anime.title}</div>
+                        <div class="anime-detail"><strong>ID:</strong> ${anime.id}</div>
+                        <div class="anime-detail"><strong>评分:</strong> ${anime.score || '无'}</div>
+                        <div class="anime-detail"><strong>类型:</strong> ${anime.type || '未知'}</div>
+                        <div class="anime-detail"><strong>集数:</strong> ${anime.episodes || '未知'}</div>
+                        <div class="anime-detail"><strong>人气:</strong> ${anime.members ? anime.members.toLocaleString() : '未知'}</div>
+                        <div class="anime-detail"><strong>排名:</strong> ${anime.rank || '未知'}</div>
+                        <div class="anime-detail"><strong>流行度:</strong> ${anime.popularity || '未知'}</div>
+                        ${genresHTML ? `<div class="anime-detail"><strong>标签:</strong>${genresHTML}</div>` : ''}
+                        ${studiosHTML ? `<div class="anime-detail"><strong>制作方:</strong>${studiosHTML}</div>` : ''}
+                    </div>
+                    <div class="action-buttons">
+                        ${isFavorite 
+                            ? `<button data-anime-id="${anime.id}" class="favorited" onclick="toggleFavorite(${anime.id})">取消收藏</button>` 
+                            : `<button data-anime-id="${anime.id}" onclick="toggleFavorite(${anime.id})">收藏</button>`
+                        }
+                    </div>
+                `;
+                
+                // 添加点击事件监听器
+                card.addEventListener('click', function(e) {
+                    // 如果点击的是收藏按钮，不触发卡片点击效果
+                    if (e.target.tagName === 'BUTTON') {
+                        return;
+                    }
+                    
+                    // 添加点击动画类
+                    this.classList.add('clicked');
+                    
+                    // 记录点击
+                    const keyword = sessionStorage.getItem('search_keyword');
+                    recordSearchClick(anime.id, keyword);
+                    
+                    // 移除点击动画类（动画结束后）
+                    setTimeout(() => {
+                        this.classList.remove('clicked');
+                    }, 300);
+                });
+                
+                container.appendChild(card);
+            });
+            
+            setupImageErrorHandling();
+        }
+        
+        // 添加记录搜索点击的函数
+        function recordSearchClick(animeId, searchTerm) {
+            const userId = localStorage.getItem('user_id');
+            if (!userId) {
+                console.log('用户未登录，无法记录点击');
+                return;
+            }
+
+            fetch('/api/record_click', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    anime_id: animeId,
+                    search_term: searchTerm
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('记录点击失败:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('记录点击请求失败:', error);
+            });
+        }
+        
+        // 加载个性化推荐
+        function loadPersonalRecommendations() {
+            if (!currentUserID) {
+                document.getElementById('recommendations-container').innerHTML = 
+                    '<div class="error-message">请先登录以获取个性化推荐</div>';
+                return;
+            }
+            
+            // 显示加载动画
+            document.getElementById('recommendation-loading').style.display = 'inline-block';
+            document.getElementById('recommendations-container').innerHTML = 
+                '<div class="loading-message">正在为您生成个性化推荐...</div>';
+            
+            // 从后端API获取数据
+            fetch(`${API_BASE_URL}/personal_recommend?user_id=${currentUserID}`)
+                .then(response => response.json())
+                .then(data => {
+                    // 隐藏加载动画
+                    document.getElementById('recommendation-loading').style.display = 'none';
+                    
+                    if (data.length > 0) {
+                        renderRecommendations(data);
+                    } else {
+                        document.getElementById('recommendations-container').innerHTML = 
+                            '<div class="error-message">暂无推荐，请先收藏一些动漫</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载个性化推荐失败:', error);
+                    // 隐藏加载动画
+                    document.getElementById('recommendation-loading').style.display = 'none';
+                    document.getElementById('recommendations-container').innerHTML = 
+                        '<div class="error-message">加载个性化推荐失败，请稍后再试</div>';
+                });
+        }
+        
+        // 渲染推荐结果
+        function renderRecommendations(results) {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+            
+            results.forEach(anime => {
+                const card = document.createElement('div');
+                card.className = 'anime-card';
+                
+                const isFavorite = userFavorites.some(fav => fav.anime_id === anime.id);
+                
+                let genresHTML = '';
+                if (anime.genres && anime.genres.length > 0) {
+                    const genresList = typeof anime.genres === 'string' ? anime.genres.split(',') : anime.genres;
+                    genresHTML = '<div class="tag-container">' + 
+                        genresList.map(genre => `<span class="tag">${genre}</span>`).join('') + 
+                        '</div>';
+                }
+                
+                let studiosHTML = '';
+                if (anime.studios && anime.studios.length > 0) {
+                    const studiosList = typeof anime.studios === 'string' ? anime.studios.split(',') : anime.studios;
+                    studiosHTML = '<div class="tag-container">' + 
+                        studiosList.map(studio => `<span class="tag">${studio}</span>`).join('') + 
+                        '</div>';
+                }
+                
+                card.innerHTML = `
+                    <div class="anime-cover-container">
+                        <img src="${getUniqueCover()}" alt="${anime.title}" class="anime-cover">
+                    </div>
+                    <div class="anime-info">
+                        <div class="anime-title" data-full-title="${anime.title}">${anime.title}</div>
+                        <div class="anime-detail"><strong>ID:</strong> ${anime.id}</div>
+                        <div class="anime-detail"><strong>评分:</strong> ${anime.score || '无'}</div>
+                        <div class="anime-detail"><strong>类型:</strong> ${anime.type || '未知'}</div>
+                        ${genresHTML ? `<div class="anime-detail"><strong>标签:</strong>${genresHTML}</div>` : ''}
+                        ${studiosHTML ? `<div class="anime-detail"><strong>制作方:</strong>${studiosHTML}</div>` : ''}
+                    </div>
+                    <div class="action-buttons">
+                        ${isFavorite 
+                            ? `<button data-anime-id="${anime.id}" class="favorited" onclick="toggleFavorite(${anime.id})">取消收藏</button>` 
+                            : `<button data-anime-id="${anime.id}" onclick="toggleFavorite(${anime.id})">收藏</button>`
+                        }
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+            
+            setupImageErrorHandling();
+        }
+        
+        // 切换收藏状态
+        function toggleFavorite(animeId) {
+            const userId = localStorage.getItem('user_id');
+            if (!userId) {
+                alert('请先登录');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const button = document.querySelector(`button[data-anime-id="${animeId}"]`);
+            if (!button) {
+                console.error(`找不到ID为 ${animeId} 的按钮`);
+                return;
+            }
+
+            const isFavorited = button.classList.contains('favorited');
+            const action = isFavorited ? 'remove' : 'add';
+
+            // 禁用按钮，防止重复点击
+            button.disabled = true;
+            const originalText = button.textContent;
+            button.textContent = isFavorited ? '取消中...' : '收藏中...';
+
+            fetch('/api/favorite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    anime_id: animeId,
+                    action: action
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (action === 'add') {
+                        button.classList.add('favorited');
+                        button.textContent = '取消收藏';
+                        // 更新本地收藏列表
+                        userFavorites.push({ anime_id: animeId });
+                    } else {
+                        button.classList.remove('favorited');
+                        button.textContent = '收藏';
+                        // 更新本地收藏列表
+                        userFavorites = userFavorites.filter(fav => fav.anime_id !== animeId);
+                    }
+                } else {
+                    alert(data.error || '操作失败');
+                    button.textContent = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('收藏操作失败:', error);
+                alert('操作失败，请稍后重试');
+                button.textContent = originalText;
+            })
+            .finally(() => {
+                button.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动漫数据可视化系统 - 登录</title>
+    <style>
+        /* 动态背景样式 */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            object-fit: cover;
+            opacity: 0.15; /* 降低背景视频透明度 */
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f5f5f5;
+            background-image: linear-gradient(45deg, #ffb6c1 15%, #87CEFA 85%);
+            background-attachment: fixed;
+        }
+        
+        .auth-container {
+            width: 380px;
+            padding: 30px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo {
+            margin-bottom: 20px;
+        }
+        
+        .logo h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin: 0;
+        }
+        
+        .auth-form {
+            display: none;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .switch-form {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .switch-form a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .switch-form a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 动画效果 */
+        @keyframes slideIn {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .auth-form.active {
+            animation: slideIn 0.3s forwards;
+        }
+        
+        /* 添加背景装饰 */
+        .background-decoration {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(45deg, #3498db, #9b59b6);
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: -1;
+        }
+        
+        .decoration-1 {
+            top: -150px;
+            left: -150px;
+        }
+        
+        .decoration-2 {
+            bottom: -150px;
+            right: -150px;
+            background: linear-gradient(45deg, #e74c3c, #f39c12);
+        }
+    </style>
+</head>
+<body>
+   
+    
+    <!-- 认证容器 -->
+    <div class="auth-container">
+        <!-- 装饰元素 -->
+        <div class="background-decoration decoration-1"></div>
+        <div class="background-decoration decoration-2"></div>
+        
+        <!-- Logo -->
+        <div class="logo">
+            <h1>动漫数据可视化系统</h1>
+            <p>欢迎使用我们的服务</p>
+        </div>
+        
+        <!-- 登录表单 -->
+        <form id="login-form" class="auth-form active" onsubmit="return login()">
+            <div class="form-group">
+                <label for="login-username">用户名</label>
+                <input type="text" id="login-username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="login-password">密码</label>
+                <input type="password" id="login-password" name="password" required autocomplete="current-password">
+                <div id="login-error" class="error-message"></div>
+            </div>
+            <button type="submit">登录</button>
+            <div class="switch-form">
+                没有账号? <a id="switch-to-register">立即注册</a>
+            </div>
+        </form>
+        
+        <!-- 注册表单 -->
+        <form id="register-form" class="auth-form" onsubmit="return register()">
+            <div class="form-group">
+                <label for="register-username">用户名</label>
+                <input type="text" id="register-username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="register-password">密码</label>
+                <input type="password" id="register-password" name="password" required autocomplete="new-password">
+                <div id="register-error" class="error-message"></div>
+            </div>
+            <button type="submit">注册</button>
+            <div class="switch-form">
+                已有账号? <a id="switch-to-login">立即登录</a>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+        // 切换表单显示
+        document.getElementById('switch-to-register').addEventListener('click', function() {
+            document.getElementById('login-form').classList.remove('active');
+            document.getElementById('register-form').classList.add('active');
+        });
+        
+        document.getElementById('switch-to-login').addEventListener('click', function() {
+            document.getElementById('register-form').classList.remove('active');
+            document.getElementById('login-form').classList.add('active');
+        });
+        
+        // 登录函数
+        function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorElement = document.getElementById('login-error');
+            
+            // 隐藏之前的错误
+            errorElement.style.display = 'none';
+            
+            // 发送登录请求
+            fetch('http://localhost:5001/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 登录成功，保存用户信息
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', username);
+                    
+                    // 显示欢迎弹窗
+                    alert('欢迎回来，主人');
+                    
+                    // 重定向到主页
+                    window.location.href = 'index.html';
+                } else {
+                    // 显示错误消息
+                    errorElement.textContent = data.error || '登录失败，请检查用户名和密码。';
+                    errorElement.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                errorElement.textContent = '网络错误，请稍后再试。';
+                errorElement.style.display = 'block';
+                console.error('Login error:', error);
+            });
+            
+            return false; // 阻止表单默认提交
+        }
+        
+        // 注册函数
+        function register() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const errorElement = document.getElementById('register-error');
+            
+            // 隐藏之前的错误
+            errorElement.style.display = 'none';
+            
+            // 发送注册请求
+            fetch('http://localhost:5001/api/auth/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username, password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 注册成功，保存用户信息
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', username);
+                    
+                    // 重定向到主页
+                    window.location.href = 'index.html';
+                } else {
+                    // 显示错误消息
+                    errorElement.textContent = data.error || '注册失败，请尝试其他用户名。';
+                    errorElement.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                errorElement.textContent = '网络错误，请稍后再试。';
+                errorElement.style.display = 'block';
+                console.error('Registration error:', error);
+            });
+            
+            return false; // 阻止表单默认提交
+        }
+        
+        // 检查是否已经登录，如果已登录直接跳转到主页
+        function checkLoginStatus() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('user_id');
+            
+            if (token && userId) {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // 页面加载时检查登录状态
+        window.addEventListener('load', checkLoginStatus);
+    </script>
+</body>
+</html> 
